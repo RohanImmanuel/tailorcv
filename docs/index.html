@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TailorCV - Resume tailoring CLI</title>
+  <meta name="description" content="A CLI that generates tailored, ATS-optimised resumes as formatted Google Docs using your own profile and OpenAI API key." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange:  #FF4F00;
+      --lgray:   #D9D9D9;
+      --blue:    #0E4C92;
+      --silver:  #C0C0C0;
+      --black:   #222222;
+      --white:   #F5F0E8;
+      --border:  3px solid var(--black);
+      --shadow:  5px 5px 0px var(--black);
+      --shadow-lg: 8px 8px 0px var(--black);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--white);
+      color: var(--black);
+      font-family: "Space Grotesk", sans-serif;
+      line-height: 1.6;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ── nav ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      border-bottom: var(--border);
+      background: var(--white);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-logo {
+      font-weight: 800;
+      font-size: 1.2rem;
+      letter-spacing: -0.02em;
+    }
+    .nav-logo span { color: var(--orange); }
+    .nav-links {
+      display: flex;
+      gap: 0.25rem;
+    }
+    .nav-links a {
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.4rem 0.9rem;
+      border: 2px solid transparent;
+      transition: background 0.1s, border-color 0.1s;
+    }
+    .nav-links a:hover {
+      background: var(--black);
+      color: var(--white);
+    }
+    .nav-links a.cta {
+      background: var(--orange);
+      color: var(--white);
+      border: 2px solid var(--black);
+      box-shadow: 3px 3px 0 var(--black);
+    }
+    .nav-links a.cta:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0 var(--black);
+      background: var(--orange);
+      color: var(--white);
+    }
+
+    /* ── hero ── */
+    .hero {
+      border-bottom: var(--border);
+      padding: 5rem 2rem 4rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      align-items: center;
+    }
+    @media (max-width: 768px) {
+      .hero { grid-template-columns: 1fr; gap: 2rem; }
+    }
+    .hero-tag {
+      display: inline-block;
+      background: var(--orange);
+      color: var(--white);
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.7rem;
+      border: 2px solid var(--black);
+      box-shadow: 3px 3px 0 var(--black);
+      margin-bottom: 1.5rem;
+    }
+    h1 {
+      font-size: clamp(2.5rem, 5vw, 3.8rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      margin-bottom: 1.25rem;
+    }
+    h1 em {
+      font-style: normal;
+      color: var(--orange);
+      text-decoration: underline;
+      text-decoration-color: var(--orange);
+      text-decoration-thickness: 4px;
+    }
+    .hero-sub {
+      font-size: 1.1rem;
+      color: #444;
+      margin-bottom: 2rem;
+      max-width: 460px;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.7rem 1.4rem;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      border: var(--border);
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 7px 7px 0 var(--black);
+    }
+    .btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0 var(--black);
+    }
+    .btn-primary { background: var(--orange); color: var(--white); }
+    .btn-secondary { background: var(--blue); color: var(--white); }
+    .btn-ghost { background: var(--white); color: var(--black); }
+
+    /* hero terminal card */
+    .terminal {
+      border: var(--border);
+      box-shadow: var(--shadow-lg);
+      background: var(--black);
+      overflow: hidden;
+    }
+    .terminal-bar {
+      background: var(--lgray);
+      border-bottom: var(--border);
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--black); }
+    .dot-r { background: var(--orange); }
+    .dot-y { background: #FFD700; }
+    .dot-g { background: #3fb950; }
+    .terminal-body {
+      padding: 1.5rem;
+      font-family: "Space Mono", monospace;
+      font-size: 0.82rem;
+      line-height: 1.8;
+      color: var(--lgray);
+    }
+    .t-prompt { color: var(--orange); }
+    .t-cmd { color: #fff; }
+    .t-comment { color: var(--silver); }
+    .t-success { color: #3fb950; }
+    .t-link { color: #58a6ff; }
+
+    /* ── section wrapper ── */
+    .section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 5rem 2rem;
+    }
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+    .section-num {
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: var(--black);
+      color: var(--white);
+      padding: 0.25rem 0.6rem;
+      margin-top: 0.25rem;
+      flex-shrink: 0;
+    }
+    h2 {
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+    h2 span { color: var(--orange); }
+    .section-lead { color: #555; margin-top: 0.5rem; font-size: 1rem; }
+
+    /* divider */
+    hr.divider { border: none; border-top: var(--border); }
+
+    /* ── steps ── */
+    .steps { display: grid; gap: 0; }
+    .step {
+      display: grid;
+      grid-template-columns: 60px 1fr;
+      border: var(--border);
+      border-bottom: none;
+    }
+    .step:last-child { border-bottom: var(--border); }
+    .step-num {
+      background: var(--orange);
+      color: var(--white);
+      font-family: "Space Mono", monospace;
+      font-size: 1.2rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: var(--border);
+    }
+    .step-body { padding: 1.25rem 1.5rem; }
+    .step-body h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .step-body p { font-size: 0.875rem; color: #555; }
+    code {
+      font-family: "Space Mono", monospace;
+      font-size: 0.8em;
+      background: var(--lgray);
+      padding: 0.1em 0.35em;
+      border: 1px solid var(--silver);
+    }
+
+    /* ── features ── */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+    }
+    @media (max-width: 768px) {
+      .features { grid-template-columns: 1fr; }
+    }
+    .feature {
+      border: var(--border);
+      border-right: none;
+      border-bottom: none;
+      padding: 2rem 1.5rem;
+    }
+    .feature:nth-child(3n) { border-right: var(--border); }
+    .features::after {
+      content: "";
+      grid-column: 1 / -1;
+      border-top: var(--border);
+    }
+    .feature-icon {
+      display: inline-block;
+      background: var(--blue);
+      color: var(--white);
+      font-size: 1.1rem;
+      width: 2.5rem;
+      height: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--black);
+      box-shadow: 3px 3px 0 var(--black);
+      margin-bottom: 1rem;
+    }
+    .feature h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .feature p { font-size: 0.85rem; color: #555; line-height: 1.6; }
+
+    /* ── commands ── */
+    .commands { display: grid; gap: 0; }
+    .command {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      border: var(--border);
+      border-bottom: none;
+      align-items: center;
+    }
+    .command:last-child { border-bottom: var(--border); }
+    .command-code {
+      padding: 1rem 1.25rem;
+      border-right: var(--border);
+      background: var(--black);
+      font-family: "Space Mono", monospace;
+      font-size: 0.82rem;
+      color: var(--orange);
+    }
+    .command-desc {
+      padding: 1rem 1.5rem;
+      font-size: 0.875rem;
+      color: #444;
+    }
+    @media (max-width: 600px) {
+      .command { grid-template-columns: 1fr; }
+      .command-code { border-right: none; border-bottom: var(--border); }
+    }
+
+    /* ── install block ── */
+    .install-strip {
+      background: var(--blue);
+      border-top: var(--border);
+      border-bottom: var(--border);
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+    .install-strip h2 { color: var(--white); margin-bottom: 1.5rem; }
+    .install-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 1rem;
+      background: var(--black);
+      border: var(--border);
+      border-color: var(--lgray);
+      box-shadow: 6px 6px 0 rgba(255,255,255,0.2);
+      padding: 0.85rem 1.5rem;
+      font-family: "Space Mono", monospace;
+      font-size: 1rem;
+      color: var(--orange);
+      margin-bottom: 1.5rem;
+    }
+    .install-box span { color: var(--silver); }
+    .copy-btn {
+      background: var(--lgray);
+      border: 2px solid var(--lgray);
+      color: var(--black);
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.3rem 0.75rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: background 0.1s;
+    }
+    .copy-btn:hover { background: var(--white); }
+
+    /* ── privacy ── */
+    .privacy-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+    }
+    @media (max-width: 768px) {
+      .privacy-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .privacy-item {
+      border: var(--border);
+      border-right: none;
+      padding: 1.5rem;
+    }
+    .privacy-item:last-child { border-right: var(--border); }
+    .privacy-item .icon { font-size: 1.5rem; margin-bottom: 0.75rem; }
+    .privacy-item h3 { font-size: 0.875rem; font-weight: 700; margin-bottom: 0.35rem; }
+    .privacy-item p { font-size: 0.8rem; color: #555; }
+
+    /* ── footer ── */
+    footer {
+      border-top: var(--border);
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    footer a:hover { text-decoration: underline; }
+    .footer-logo { font-weight: 800; }
+    .footer-logo span { color: var(--orange); }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <span class="nav-logo">Tailor<span>CV</span></span>
+    <div class="nav-links">
+      <a href="#how-it-works">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#setup">Setup</a>
+      <a href="https://github.com/RohanImmanuel/tailorcv" target="_blank" class="cta">GitHub &rarr;</a>
+    </div>
+  </nav>
+
+  <!-- hero -->
+  <div style="border-bottom: 3px solid #222;">
+    <div class="hero">
+      <div>
+        <div class="hero-tag">Open Source CLI</div>
+        <h1>Tailored resumes.<br><em>In 2 minutes.</em></h1>
+        <p class="hero-sub">Paste a job description. Get a formatted Google Doc resume. Your data and API keys never leave your machine.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="https://github.com/RohanImmanuel/tailorcv" target="_blank">View on GitHub</a>
+          <a class="btn btn-secondary" href="#setup">Get started</a>
+          <a class="btn btn-ghost" href="#how-it-works">How it works</a>
+        </div>
+      </div>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+          <span style="font-family:'Space Mono',monospace;font-size:0.75rem;margin-left:0.5rem;color:#555">tailorcv</span>
+        </div>
+        <div class="terminal-body">
+          <div><span class="t-prompt">$ </span><span class="t-cmd">tailorcv generate</span></div>
+          <div>&nbsp;</div>
+          <div><span class="t-comment">? Company name</span> <span class="t-cmd">Stripe</span></div>
+          <div><span class="t-comment">? Role title</span> <span class="t-cmd">Software Engineer</span></div>
+          <div>&nbsp;</div>
+          <div><span class="t-comment">Paste the job description below.</span></div>
+          <div><span class="t-comment">Press Enter twice when done.</span></div>
+          <div>&nbsp;</div>
+          <div><span class="t-success">&#9670; Generating resume with GPT-5.5&hellip;</span></div>
+          <div><span class="t-success">&#10003; Resume generated</span></div>
+          <div><span class="t-success">&#10003; Google Doc created</span></div>
+          <div>&nbsp;</div>
+          <div><span style="color:#fff;font-weight:700">Open your resume:</span></div>
+          <div><span class="t-link">docs.google.com/document/d/&hellip;</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- how it works -->
+  <hr class="divider" style="border:none;">
+  <div class="section" id="how-it-works">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <div>
+        <h2>From JD to Google Doc <span>in five steps</span></h2>
+        <p class="section-lead">Store your career once. TailorCV handles every application.</p>
+      </div>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-body">
+          <h3>Store your career profile</h3>
+          <p>Run <code>tailorcv profile</code> once to save your experience, projects, skills, and certifications. Stored locally at <code>~/.config/resume-tailor/</code> - never in the cloud.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-body">
+          <h3>Paste the job description</h3>
+          <p>Run <code>tailorcv generate</code>, enter the company and role, then paste the JD directly in your terminal. Press Enter twice to continue.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-body">
+          <h3>GPT-5.5 tailors your resume</h3>
+          <p>Your profile and JD are sent to GPT-5.5. The model scores your fit, identifies must-have requirements, and generates a truthful tailored resume - no invented experience, no inflated titles.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-body">
+          <h3>Your Google Docs template is filled</h3>
+          <p>TailorCV copies your pre-formatted template and fills it with generated content - preserving all your fonts, spacing, tab stops, and bullet styles exactly as designed.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">05</div>
+        <div class="step-body">
+          <h3>Get a direct link</h3>
+          <p>A link to the finished Google Doc is printed in the terminal. Saved to your Drive as <code>ResumeTailor / Company - Role - Resume</code>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- features -->
+  <div class="section" id="features">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <div>
+        <h2>Built for <span>serious</span> job applications</h2>
+        <p class="section-lead">Not just keyword matching - TailorCV optimises for recruiter shortlisting.</p>
+      </div>
+    </div>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">🎯</div>
+        <h3>Recruiter-first optimisation</h3>
+        <p>Scores your JD fit, prioritises must-have requirements, and leads with your strongest matching evidence - not just ATS keywords.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🚫</div>
+        <h3>Zero hallucination</h3>
+        <p>Strict rules prevent invented metrics, inflated titles, missing skills being claimed, or adjacent experience presented as direct ownership.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🎨</div>
+        <h3>Formatting preserved</h3>
+        <p>Your Google Doc template formatting is never touched. Fonts, tab stops, bullet styles, and spacing carry over to every generated resume.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔒</div>
+        <h3>Your keys, your data</h3>
+        <p>Profile data and API keys are stored locally at <code>~/.config/resume-tailor/</code> - never inside the project, never on any server.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📄</div>
+        <h3>Custom template</h3>
+        <p>Design your own resume template in Google Docs once. TailorCV copies and fills it on every generation using simple placeholder tags.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">💻</div>
+        <h3>Cross-platform</h3>
+        <p>Works on Mac, Linux, and Windows. Pure Node.js with no native dependencies - install once, use anywhere.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- install strip -->
+  <div class="install-strip" id="setup">
+    <h2>One command to install</h2>
+    <div>
+      <div class="install-box">
+        <span>$</span> npm install -g tailorcv
+        <button class="copy-btn" onclick="navigator.clipboard.writeText('npm install -g tailorcv'); this.textContent='COPIED!'; setTimeout(()=>this.textContent='COPY',1500)">Copy</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+      <a class="btn btn-primary" href="https://github.com/RohanImmanuel/tailorcv" target="_blank">GitHub &rarr;</a>
+      <a class="btn" style="background:var(--white);color:var(--black)" href="https://github.com/RohanImmanuel/tailorcv#readme" target="_blank">Read the docs</a>
+    </div>
+  </div>
+
+  <!-- commands -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <div>
+        <h2>Four commands. <span>That's it.</span></h2>
+        <p class="section-lead">You need an OpenAI API key and a Google account.</p>
+      </div>
+    </div>
+    <div class="commands">
+      <div class="command">
+        <div class="command-code">tailorcv setup</div>
+        <div class="command-desc">Add your OpenAI key and connect Google Drive via OAuth. Run once.</div>
+      </div>
+      <div class="command">
+        <div class="command-code">tailorcv profile</div>
+        <div class="command-desc">Fill in your career profile - experience, skills, projects, education, certifications.</div>
+      </div>
+      <div class="command">
+        <div class="command-code">tailorcv generate</div>
+        <div class="command-desc">Paste a job description and get a tailored Google Doc resume in ~15 seconds.</div>
+      </div>
+      <div class="command">
+        <div class="command-code">tailorcv template</div>
+        <div class="command-desc">Reset your Google Docs template to the latest placeholder format.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- privacy -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <div>
+        <h2>Nothing leaves your machine <span>except what you choose</span></h2>
+        <p class="section-lead">No accounts. No analytics. No backend. Just you, OpenAI, and Google Drive.</p>
+      </div>
+    </div>
+    <div class="privacy-grid">
+      <div class="privacy-item">
+        <div class="icon">📁</div>
+        <h3>Profile data</h3>
+        <p><code>~/.config/resume-tailor/profile.json</code></p>
+      </div>
+      <div class="privacy-item">
+        <div class="icon">🔑</div>
+        <h3>API keys</h3>
+        <p><code>~/.config/resume-tailor/.env</code></p>
+      </div>
+      <div class="privacy-item">
+        <div class="icon">⚙️</div>
+        <h3>Config + OAuth token</h3>
+        <p><code>~/.config/resume-tailor/config.json</code></p>
+      </div>
+      <div class="privacy-item">
+        <div class="icon">📝</div>
+        <h3>Generated resumes</h3>
+        <p>Your Google Drive under <code>ResumeTailor/</code></p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span class="footer-logo">Tailor<span>CV</span></span>
+    <span>MIT Licence &nbsp;&middot;&nbsp; <a href="https://github.com/RohanImmanuel/tailorcv" target="_blank">github.com/RohanImmanuel/tailorcv</a></span>
+  </footer>
+
+</body>
+</html>
