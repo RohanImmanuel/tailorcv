@@ -1,0 +1,44 @@
+{
+  "name": "tailorcv",
+  "version": "0.1.0",
+  "description": "CLI to generate tailored resumes as Google Docs using your own AI key",
+  "type": "module",
+  "bin": {
+    "tailorcv": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "dev:profile": "tsx src/index.ts profile"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "resume",
+    "cli",
+    "ai",
+    "google-docs"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^7",
+    "boxen": "^8",
+    "chalk": "^5",
+    "commander": "^12",
+    "dotenv": "^17.4.2",
+    "googleapis": "^173.0.0",
+    "open": "^11.0.0",
+    "openai": "^6.39.1",
+    "ora": "^8",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "tsx": "^4",
+    "typescript": "^5"
+  }
+}
