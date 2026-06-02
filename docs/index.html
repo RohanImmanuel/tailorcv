@@ -387,10 +387,67 @@
       justify-content: space-between;
       font-size: 0.85rem;
       font-weight: 500;
+      flex-wrap: wrap;
+      gap: 0.5rem;
     }
     footer a:hover { text-decoration: underline; }
     .footer-logo { font-weight: 800; }
     .footer-logo span { color: var(--orange); }
+
+    /* ── global mobile overrides ── */
+    @media (max-width: 768px) {
+      /* nav: hide text links, keep logo + github cta */
+      .nav-links a:not(.cta) { display: none; }
+      nav { padding: 0.875rem 1.25rem; }
+
+      /* hero */
+      .hero { padding: 2.5rem 1.25rem 2rem; gap: 2rem; }
+      .hero-sub { max-width: 100%; font-size: 1rem; }
+      .hero-actions { flex-direction: column; }
+      .hero-actions .btn { justify-content: center; }
+      .terminal-body { font-size: 0.75rem; padding: 1rem; }
+
+      /* sections */
+      .section { padding: 3rem 1.25rem; }
+      .section-header { flex-direction: column; gap: 0.5rem; margin-bottom: 2rem; }
+      .section-num { margin-top: 0; }
+
+      /* steps */
+      .step { grid-template-columns: 44px 1fr; }
+
+      /* features: 1-col, fix borders */
+      .features { grid-template-columns: 1fr; }
+      .feature { border-right: var(--border); border-bottom: none; }
+      .feature:last-child { border-bottom: var(--border); }
+      .feature:nth-child(3n) { border-right: var(--border); }
+
+      /* privacy: 2-col, fix borders */
+      .privacy-grid { grid-template-columns: repeat(2, 1fr); }
+      .privacy-item { border-right: none; border-bottom: none; }
+      .privacy-item:nth-child(2n) { border-right: var(--border); }
+      .privacy-item:nth-last-child(-n+2) { border-bottom: var(--border); }
+
+      /* install box */
+      .install-box {
+        flex-wrap: wrap;
+        justify-content: center;
+        font-size: 0.85rem;
+        padding: 0.75rem 1rem;
+        width: 100%;
+        max-width: 360px;
+      }
+
+      /* footer */
+      footer { flex-direction: column; text-align: center; gap: 0.4rem; }
+    }
+
+    @media (max-width: 480px) {
+      h1 { font-size: 2.2rem; }
+      .terminal { display: none; } /* hide terminal on very small screens */
+      .privacy-grid { grid-template-columns: 1fr; }
+      .privacy-item { border-right: var(--border); border-bottom: none; }
+      .privacy-item:last-child { border-bottom: var(--border); }
+    }
   </style>
 </head>
 <body>
@@ -410,7 +467,7 @@
     <div class="hero">
       <div>
         <div class="hero-tag">Open Source CLI</div>
-        <h1>Tailored resumes.<br><em>In 2 minutes.</em></h1>
+        <h1>Tailored resumes <br><em>In 2 minutes</em></h1>
         <p class="hero-sub">Paste a job description. Get a formatted Google Doc resume. Your data and API keys never leave your machine.</p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="https://github.com/RohanImmanuel/tailorcv" target="_blank">View on GitHub</a>
@@ -620,7 +677,7 @@
 
   <footer>
     <span class="footer-logo">Tailor<span>CV</span></span>
-    <span><a href="https://github.com/RohanImmanuel/tailorcv" target="_blank">github.com/RohanImmanuel/tailorcv</a></span>
+    <span><a href="https://github.com/RohanImmanuel/tailorcv" target="_blank">github.com/RohanImmanuel/tailorcv</a> &nbsp;&middot;&nbsp; Built by <a href="https://www.linkedin.com/in/rohanimmanuel/" target="_blank">Rohan Immanuel</a></span>
   </footer>
 
 </body>
