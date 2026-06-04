@@ -1,8 +1,8 @@
 import chalk from "chalk";
 import ora from "ora";
 import { getAuthenticatedClient } from "../core/googleAuth.js";
-import { copyAndFill } from "../core/googleDrive.js";
-import { loadConfig } from "../core/config.js";
+import { copyAndFill, resetAndFill } from "../core/googleDrive.js";
+import { loadConfig, updateConfig } from "../core/config.js";
 import { load as loadProfile } from "../core/profileStore.js";
 import type { GeneratedResume } from "../core/ai.js";
 import open from "open";
@@ -95,16 +95,26 @@ export async function run(): Promise<void> {
   const spinner = ora("Filling template with mock data…").start();
 
   try {
-    const { url } = await copyAndFill(
-      auth,
-      config.google_template_doc_id,
-      config.google_folder_id,
-      "TEST - Template Check",
-      profile,
-      MOCK_RESUME
-    );
+    let url: string;
 
-    spinner.succeed("Test doc created");
+    if (config.google_test_doc_id) {
+      // reuse existing test doc — reset to template then fill
+      url = await resetAndFill(auth, config.google_test_doc_id, profile, MOCK_RESUME);
+    } else {
+      // first run — create the doc and save its id
+      const result = await copyAndFill(
+        auth,
+        config.google_template_doc_id,
+        config.google_folder_id,
+        "TEST - Template Check",
+        profile,
+        MOCK_RESUME
+      );
+      url = result.url;
+      updateConfig({ google_test_doc_id: result.docId });
+    }
+
+    spinner.succeed("Test doc updated");
     console.log(chalk.green("\nOpen your doc and check:"));
     console.log(chalk.dim("  • Skills lines: bold category name, plain items, correct separator"));
     console.log(chalk.dim("  • Experience: company/location right-aligned, title/dates right-aligned, bullets styled"));

@@ -7,6 +7,7 @@ export interface Config {
   openai_key_set?: boolean;
   google_folder_id?: string;
   google_template_doc_id?: string;
+  google_test_doc_id?: string;
   google_token?: GoogleToken;
 }
 

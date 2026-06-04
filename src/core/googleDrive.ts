@@ -266,6 +266,43 @@ function applyStyle(
   }
 }
 
+// ─── fill an existing doc ─────────────────────────────────────────────────────
+//
+// Resets the doc to the current template text then fills it — used by
+// tailorcv test so the same doc is reused instead of creating a new one.
+
+export async function resetAndFill(
+  auth: OAuth2Client,
+  docId: string,
+  profile: Profile,
+  resume: GeneratedResume
+): Promise<string> {
+  const docs = getDocs(auth);
+
+  // reset content to template
+  await resetTemplateContent(auth, docId);
+
+  // fill (same logic as copyAndFill but doc already exists)
+  const { data: doc } = await docs.documents.get({ documentId: docId });
+  const allElements   = doc.body?.content ?? [];
+  const paragraphs    = extractParagraphs(doc);
+
+  const blockRequests = buildBlockRequests(allElements, paragraphs, buildBlocks(profile, resume));
+  if (blockRequests.length) {
+    await docs.documents.batchUpdate({ documentId: docId, requestBody: { requests: blockRequests } });
+  }
+
+  const replacements   = buildSimpleReplacements(profile, resume);
+  const simpleRequests = Object.entries(replacements).map(([placeholder, value]) => ({
+    replaceAllText: { containsText: { text: placeholder, matchCase: true }, replaceText: value },
+  }));
+  if (simpleRequests.length) {
+    await docs.documents.batchUpdate({ documentId: docId, requestBody: { requests: simpleRequests } });
+  }
+
+  return `https://docs.google.com/document/d/${docId}/edit`;
+}
+
 // ─── copy + fill ──────────────────────────────────────────────────────────────
 
 export async function copyAndFill(
