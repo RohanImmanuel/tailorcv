@@ -328,13 +328,23 @@ export async function copyAndFill(
 // After all replaceAllText calls, fetch the document and apply a right-aligned
 // tab stop to every paragraph that contains a tab character. These are the
 // header lines: Company\tLocation, Title\tDates, ProjectName\tURL.
-// A letter-size doc with 1" margins has ~450pt of usable width.
+// Content width is derived from the document's own page size and margins.
+
+function contentWidthPt(doc: docs_v1.Schema$Document): number {
+  const style = doc.documentStyle ?? {};
+  const pageW     = style.pageSize?.width?.magnitude      ?? 612; // letter width in pt
+  const marginL   = style.marginLeft?.magnitude            ?? 72;  // 1 inch default
+  const marginR   = style.marginRight?.magnitude           ?? 72;
+  return pageW - marginL - marginR;
+}
 
 async function applyRightTabStops(
   docs: ReturnType<typeof getDocs>,
   docId: string
 ): Promise<void> {
   const { data: doc } = await docs.documents.get({ documentId: docId });
+
+  const width = contentWidthPt(doc);
 
   const tabRequests: docs_v1.Schema$Request[] = (doc.body?.content ?? [])
     .filter((el) => {
@@ -348,7 +358,7 @@ async function applyRightTabStops(
       updateParagraphStyle: {
         range: { startIndex: el.startIndex!, endIndex: el.endIndex! },
         paragraphStyle: {
-          tabStops: [{ alignment: "RIGHT", offset: { magnitude: 468, unit: "PT" } }],
+          tabStops: [{ alignment: "RIGHT", offset: { magnitude: width, unit: "PT" } }],
         },
         fields: "tabStops",
       },
