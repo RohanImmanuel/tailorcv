@@ -16,6 +16,14 @@ export interface Block {
   styleMap:    Partial<Record<LineRole, string>>;
 }
 
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+function ensureHttps(url: string): string {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  return `https://${url}`;
+}
+
 // ─── simple replacements ──────────────────────────────────────────────────────
 
 export function buildSimpleReplacements(
@@ -92,7 +100,7 @@ export function buildBlocks(profile: Profile, resume: GeneratedResume): Block[] 
         const pp = findProj(proj.name);
         return [
           ...(i > 0 ? [{ text: "", role: "spacer" as LineRole }] : []),
-          { text: `${proj.name}\t${pp?.url ?? ""}`, role: "header" as LineRole },
+          { text: `${proj.name}\t${ensureHttps(pp?.url ?? "")}`, role: "header" as LineRole },
           { text: proj.tech.join(" · "),            role: "plain"  as LineRole },
           ...proj.bullets.map((b) => ({ text: b, role: "bullet" as LineRole })),
         ];
