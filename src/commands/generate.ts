@@ -28,10 +28,35 @@ const h      = (s: string) => chalk.bold.underline(s);
 // ─── resume renderer ─────────────────────────────────────────────────────────
 
 function renderResume(resume: GeneratedResume, company: string, role: string): void {
+  // ── hero headline ──────────────────────────────────────────────────────────
+  console.log("\n" + boxen(
+    chalk.bold.white(resume.headline),
+    {
+      padding: { top: 0, bottom: 0, left: 2, right: 2 },
+      borderStyle: "double",
+      borderColor: "green",
+      width: w(),
+      textAlignment: "center",
+    }
+  ));
+
+  // ── fit summary ───────────────────────────────────────────────────────────
+  const totalBullets = resume.experience.reduce((n, e) => n + e.bullets.length, 0)
+                     + resume.projects.reduce((n, p) => n + p.bullets.length, 0);
+  const stat = (n: number, label: string) => `${chalk.bold.green(String(n))} ${chalk.dim(label)}`;
+  console.log(
+    "\n  " +
+    [
+      stat(resume.experience.length, "roles"),
+      stat(resume.projects.length,   "projects"),
+      stat(resume.skills.length,     "skill groups"),
+      stat(totalBullets,             "bullets"),
+    ].join(chalk.dim("  ·  ")) + "\n"
+  );
+
+  // ── full content panel ────────────────────────────────────────────────────
   const lines: string[] = [];
 
-  lines.push(chalk.bold(resume.headline));
-  lines.push("");
   lines.push(h("Profile"));
   for (const p of resume.summary) lines.push(bullet(p));
 
@@ -56,7 +81,7 @@ function renderResume(resume: GeneratedResume, company: string, role: string): v
     lines.push("");
     lines.push(h("Projects"));
     for (const p of resume.projects) {
-      lines.push(`${chalk.bold(p.name)}  ${chalk.dim(p.tech.join(", "))}`);
+      lines.push(`${chalk.bold(p.name)}  ${chalk.dim(p.tech.join(" · "))}`);
       for (const b of p.bullets) lines.push(bullet(b));
     }
   }
@@ -132,7 +157,7 @@ export async function run(): Promise<void> {
     const auth = await getAuthenticatedClient();
 
     if (auth) {
-      const docSpinner = ora({ text: "Creating Google Doc…", color: "cyan" }).start();
+      const docSpinner = ora({ text: "Building your Google Doc…", color: "cyan" }).start();
       try {
         const docName = `${company} - ${role} - Resume`;
 
@@ -145,8 +170,17 @@ export async function run(): Promise<void> {
           resume
         );
 
-        docSpinner.succeed(chalk.green("Google Doc created"));
-        console.log(`\n${chalk.bold("Open your resume:")} ${chalk.cyan(url)}\n`);
+        docSpinner.succeed(chalk.green("Google Doc ready"));
+        console.log("\n" + boxen(
+          `${chalk.dim("Open your resume")}\n\n${chalk.bold.cyan(url)}`,
+          {
+            padding: { top: 0, bottom: 0, left: 2, right: 2 },
+            borderStyle: "double",
+            borderColor: "cyan",
+            width: w(),
+            textAlignment: "center",
+          }
+        ) + "\n");
         return;
 
       } catch (err) {
