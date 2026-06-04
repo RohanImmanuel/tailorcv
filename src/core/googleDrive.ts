@@ -358,7 +358,7 @@ async function applyRightTabStops(
       updateParagraphStyle: {
         range: { startIndex: el.startIndex!, endIndex: el.endIndex! },
         paragraphStyle: {
-          tabStops: [{ alignment: "RIGHT", offset: { magnitude: width, unit: "PT" } }],
+          tabStops: [{ alignment: "END", offset: { magnitude: width, unit: "PT" } }],
         },
         fields: "tabStops",
       },
