@@ -51,31 +51,19 @@ TECHNICAL SKILLS
 
 EXPERIENCE
 
-{{exp-1-company}}\t{{exp-1-location}}
-{{exp-1-title}}\t{{exp-1-dates}}
-{{exp-1-bullet}}
-
-{{exp-2-company}}\t{{exp-2-location}}
-{{exp-2-title}}\t{{exp-2-dates}}
-{{exp-2-bullet}}
-
-{{exp-3-company}}\t{{exp-3-location}}
-{{exp-3-title}}\t{{exp-3-dates}}
-{{exp-3-bullet}}
+{{experience-start}}
+{{exp-company}}\t{{exp-location}}
+{{exp-title}}\t{{exp-dates}}
+{{exp-bullet}}
+{{experience-end}}
 
 PROJECTS
 
-{{proj-1-name}}\t{{proj-1-url}}
-{{proj-1-skills}}
-{{proj-1-bullet}}
-
-{{proj-2-name}}\t{{proj-2-url}}
-{{proj-2-skills}}
-{{proj-2-bullet}}
-
-{{proj-3-name}}\t{{proj-3-url}}
-{{proj-3-skills}}
-{{proj-3-bullet}}
+{{projects-start}}
+{{proj-name}}\t{{proj-url}}
+{{proj-tech}}
+{{proj-bullet}}
+{{projects-end}}
 
 References available upon request`;
 
@@ -286,7 +274,7 @@ export async function copyAndFill(
   const paragraphs  = extractParagraphs(doc);
 
   // 3. build block requests — reads styles from placeholder lines, then replaces content
-  const blocks = buildBlocks(resume);
+  const blocks = buildBlocks(profile, resume);
   const blockRequests = buildBlockRequests(allElements, paragraphs, blocks);
 
   if (blockRequests.length) {

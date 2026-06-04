@@ -30,7 +30,7 @@ export const ResumeSchema = z.object({
       title:   z.string(),
       bullets: z.array(z.string()),
     })
-  ).describe("Same order as candidate profile — one object per role"),
+  ).describe("Ordered by relevance to the JD — most relevant role first"),
 
   projects: z.array(
     z.object({
@@ -38,7 +38,7 @@ export const ResumeSchema = z.object({
       tech:    z.array(z.string()),
       bullets: z.array(z.string()),
     })
-  ).describe("Same order as candidate profile — one object per project"),
+  ).describe("Ordered by relevance to the JD — most relevant project first"),
 });
 
 export type GeneratedResume = z.infer<typeof ResumeSchema>;
@@ -67,8 +67,10 @@ Generate ATS-optimised resume content that truthfully aligns the candidate's rea
 
 The output must:
 - Match the provided JSON schema exactly
-- Preserve the same number and order of experience entries as the candidate profile
-- Preserve the same number and order of project entries as the candidate profile
+- Include all experience entries from the candidate profile
+- Include all project entries from the candidate profile
+- Order experience entries by relevance to the JD — most relevant role first
+- Order project entries by relevance to the JD — most relevant project first
 - Use only evidence found in the candidate profile
 - Mirror important job description keywords only when truthful
 - Prioritise relevance to the target role over generic resume language
@@ -174,7 +176,7 @@ Only use categories that fit the candidate profile and job description.
 For each experience entry:
 - Return one object with company, title, and bullets
 - Keep company and title exactly as they appear in the candidate profile
-- Keep the same order as the candidate profile
+- Order by relevance to the JD — most relevant role first
 - Generate 4–6 bullets for recent or highly relevant roles
 - Generate 3–5 bullets for older or less relevant roles
 - If a role is weakly related to the JD, keep only the most transferable bullets
@@ -196,7 +198,7 @@ Built, Developed, Automated, Integrated, Designed, Optimised, Improved, Delivere
 For each project entry:
 - Return one object with name, tech, and bullets
 - Keep name exactly as it appears in the candidate profile
-- Keep the same order as the candidate profile
+- Order by relevance to the JD — most relevant project first
 - Generate 2–3 bullets only when enough real evidence exists
 - Use only technologies listed for that project or clearly present in the candidate profile
 - Tailor bullets toward the target job
@@ -276,8 +278,8 @@ Before returning, silently verify:
 - Headline does not inflate seniority
 - Company names and titles are unchanged from the profile
 - Project names are unchanged from the profile
-- Experience order matches the candidate profile
-- Project order matches the candidate profile
+- Experience is ordered by relevance to the JD
+- Projects are ordered by relevance to the JD
 - Any bullet containing a URL in the candidate profile still contains that URL
 - Skills are ordered by JD relevance
 - Output contains no markdown`;
