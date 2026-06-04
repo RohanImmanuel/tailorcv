@@ -4,6 +4,8 @@ A CLI that generates tailored, ATS-optimised resumes as formatted Google Docs us
 
 Your data and API keys never leave your machine and your resume lands in your own Google Drive.
 
+![TailorCV demo](docs/demo.gif)
+
 ## Install
 
 ```bash
@@ -194,7 +196,7 @@ tailorcv generate
 ```
 
 1. Enter company name and role title
-2. Paste the job description - press Enter twice when done
+2. Your editor opens — paste the job description, save, and quit
 3. Wait ~15 seconds
 4. Get a Google Doc link
 

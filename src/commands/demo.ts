@@ -101,7 +101,7 @@ export async function run(): Promise<void> {
   // simulate prompts
   console.log(chalk.green("?") + " Company name " + chalk.cyan(company));
   console.log(chalk.green("?") + " Role title " + chalk.cyan(role));
-  console.log(chalk.dim("\nPaste the job description below, then press Enter twice to continue."));
+  console.log(chalk.dim("\nPaste the job description below, then press Ctrl+D when done."));
   await sleep(600);
   console.log(chalk.dim("[job description pasted]\n"));
   await sleep(400);
@@ -109,7 +109,7 @@ export async function run(): Promise<void> {
   // ── AI generation ──────────────────────────────────────────────────────────
 
   const aiHandle = startAiSpinner(ora);
-  await sleep(13000); // simulate GPT call duration
+  await sleep(4000); // simulate GPT call duration
   aiHandle.stop(true, "Resume generated");
 
   // ── render ─────────────────────────────────────────────────────────────────
@@ -152,7 +152,7 @@ export async function run(): Promise<void> {
 
   await sleep(600);
   const docHandle = startDocSpinner(ora);
-  await sleep(9000); // simulate doc build duration
+  await sleep(3000); // simulate doc build duration
   docHandle.stop(true, "Google Doc ready");
 
   // ── url reveal ─────────────────────────────────────────────────────────────

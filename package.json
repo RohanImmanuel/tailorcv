@@ -1,13 +1,13 @@
 {
   "name": "tailorcv",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI to generate tailored resumes as Google Docs using your own AI key",
   "type": "module",
   "bin": {
     "tailorcv": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && chmod +x dist/index.js",
     "dev": "tsx src/index.ts",
     "dev:profile": "tsx src/index.ts profile"
   },

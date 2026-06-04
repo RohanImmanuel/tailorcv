@@ -1,4 +1,4 @@
-import { input } from "@inquirer/prompts";
+import { input, editor } from "@inquirer/prompts";
 import chalk from "chalk";
 import boxen from "boxen";
 import ora from "ora";
@@ -89,27 +89,15 @@ export async function run(): Promise<void> {
   const company = await input({ message: "Company name" });
   const role    = await input({ message: "Role title" });
 
-  console.log(chalk.dim("\nPaste the job description below, then press Enter twice to continue.\n"));
+  console.log(chalk.dim("\nYour editor will open — paste the job description, save, and quit.\n"));
 
-  const lines: string[] = [];
-  let blankCount = 0;
-  const rl = (await import("readline")).createInterface({ input: process.stdin });
-  await new Promise<void>((resolve) => {
-    rl.on("line", (line) => {
-      if (line === "") {
-        blankCount++;
-        if (blankCount >= 2) { rl.close(); resolve(); return; }
-      } else {
-        blankCount = 0;
-      }
-      lines.push(line);
-    });
-    rl.on("close", resolve);
-  });
-  const jd = lines.join("\n").trim();
+  const jd = (await editor({
+    message: "Job description",
+    postfix: ".txt",
+  })).trim();
 
   if (!jd) {
-    await errorBox("No job description", "Nothing was pasted. Aborting.");
+    await errorBox("No job description", "Nothing was saved. Aborting.");
     return;
   }
 
