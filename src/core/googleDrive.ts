@@ -41,45 +41,41 @@ export const TEMPLATE_TEXT = `{{name}}
 
 PROFILE
 
-{{profile-start}}
-{{profile-bullet}}
-{{profile-end}}
+{{profile_points}}
 
 TECHNICAL SKILLS
 
-{{skills-start}}
-{{skills-line}}
+{{skils-start separator=" · "}}
+{{skills-section-title}}: {{skills}}
 {{skills-end}}
 
 EXPERIENCE
 
-{{experience-start}}
-{{exp-company}}\t{{exp-location}}
-{{exp-title}}\t{{exp-dates}}
-{{exp-bullet}}
-{{experience-end}}
+{{exp-1-company}}\t{{exp-1-location}}
+{{exp-1-title}}\t{{exp-1-dates}}
+{{exp-1-bullet}}
+
+{{exp-2-company}}\t{{exp-2-location}}
+{{exp-2-title}}\t{{exp-2-dates}}
+{{exp-2-bullet}}
+
+{{exp-3-company}}\t{{exp-3-location}}
+{{exp-3-title}}\t{{exp-3-dates}}
+{{exp-3-bullet}}
 
 PROJECTS
 
-{{projects-start}}
-{{proj-name}}\t{{proj-url}}
-{{proj-tech}}
-{{proj-bullet}}
-{{projects-end}}
+{{proj-1-name}}\t{{proj-1-url}}
+{{proj-1-skills}}
+{{proj-1-bullet}}
 
-EDUCATION
+{{proj-2-name}}\t{{proj-2-url}}
+{{proj-2-skills}}
+{{proj-2-bullet}}
 
-{{education-start}}
-{{edu-institution}}
-{{edu-degree}}\t{{edu-grad}}
-{{edu-gpa}}
-{{education-end}}
-
-CERTIFICATIONS
-
-{{certifications-start}}
-{{cert-line}}
-{{certifications-end}}
+{{proj-3-name}}\t{{proj-3-url}}
+{{proj-3-skills}}
+{{proj-3-bullet}}
 
 References available upon request`;
 
@@ -150,7 +146,7 @@ function extractParagraphs(doc: docs_v1.Schema$Document): Para[] {
 
 // ─── style extraction ─────────────────────────────────────────────────────────
 
-// tabStops is read-only in the Docs API — cannot be set via updateParagraphStyle
+// tabStops CAN be set via updateParagraphStyle (unlike named-style inherited values)
 const PARA_STYLE_FIELDS = [
   "namedStyleType", "alignment", "lineSpacing", "spaceAbove", "spaceBelow",
   "indentFirstLine", "indentStart", "indentEnd",
@@ -318,7 +314,50 @@ export async function copyAndFill(
     });
   }
 
+  // 5. apply right tab stop to any paragraph containing a tab character
+  //    (company\tlocation, title\tdates, proj-name\turl lines)
+  await applyRightTabStops(docs, docId);
+
   return { docId, url };
+}
+
+// ─── right tab stop pass ──────────────────────────────────────────────────────
+//
+// After all replaceAllText calls, fetch the document and apply a right-aligned
+// tab stop to every paragraph that contains a tab character. These are the
+// header lines: Company\tLocation, Title\tDates, ProjectName\tURL.
+// A letter-size doc with 1" margins has ~450pt of usable width.
+
+async function applyRightTabStops(
+  docs: ReturnType<typeof getDocs>,
+  docId: string
+): Promise<void> {
+  const { data: doc } = await docs.documents.get({ documentId: docId });
+
+  const tabRequests: docs_v1.Schema$Request[] = (doc.body?.content ?? [])
+    .filter((el) => {
+      if (!el.paragraph) return false;
+      const text = (el.paragraph.elements ?? [])
+        .map((e) => e.textRun?.content ?? "")
+        .join("");
+      return text.includes("\t");
+    })
+    .map((el) => ({
+      updateParagraphStyle: {
+        range: { startIndex: el.startIndex!, endIndex: el.endIndex! },
+        paragraphStyle: {
+          tabStops: [{ alignment: "RIGHT", offset: { magnitude: 450, unit: "PT" } }],
+        },
+        fields: "tabStops",
+      },
+    }));
+
+  if (tabRequests.length) {
+    await docs.documents.batchUpdate({
+      documentId: docId,
+      requestBody: { requests: tabRequests },
+    });
+  }
 }
 
 // ─── block request builder ───────────────────────────────────────────────────

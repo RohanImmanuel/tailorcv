@@ -46,9 +46,17 @@ export function buildSimpleReplacements(
     r[`{{exp-${i + 1}-bullet}}`] = exp.bullets.join("\n");
   });
 
-  // Project skills, bullets, and URL — one placeholder each per project
-  // URL comes from profile directly (not AI output) to avoid hallucination
+  // Experience header fields — company, title, location, dates
+  profile.experience.forEach((exp, i) => {
+    r[`{{exp-${i + 1}-company}}`]  = exp.company;
+    r[`{{exp-${i + 1}-title}}`]    = exp.title;
+    r[`{{exp-${i + 1}-location}}`] = exp.location;
+    r[`{{exp-${i + 1}-dates}}`]    = exp.dates;
+  });
+
+  // Project name, skills, bullets, and URL — sourced from profile to avoid hallucination
   resume.projects.forEach((proj, i) => {
+    r[`{{proj-${i + 1}-name}}`]   = profile.projects[i]?.name ?? proj.name;
     r[`{{proj-${i + 1}-skills}}`] = proj.tech.join(" · ");
     r[`{{proj-${i + 1}-bullet}}`] = proj.bullets.join("\n");
     r[`{{proj-${i + 1}-url}}`]    = profile.projects[i]?.url ?? "";

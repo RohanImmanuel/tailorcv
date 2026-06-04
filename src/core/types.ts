@@ -17,8 +17,7 @@ export interface Experience extends Entry {
   company: string;
   title: string;
   location: string;
-  start_date: string;
-  end_date: string;
+  dates: string;
   bullets: string[];
 }
 

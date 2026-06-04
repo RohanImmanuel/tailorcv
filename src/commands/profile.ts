@@ -125,8 +125,7 @@ const FIELDS: Record<ListSection, { key: string; label: string; list?: boolean; 
     { key: "company",    label: "Company" },
     { key: "title",      label: "Job title" },
     { key: "location",   label: "Location" },
-    { key: "start_date", label: "Start date (e.g. Jan 2022)" },
-    { key: "end_date",   label: "End date (e.g. Present)" },
+    { key: "dates",      label: "Dates (e.g. Jan 2022 – Present)" },
     { key: "bullets",    label: "Key bullets (one per line)", multiline: true },
   ],
   projects: [
