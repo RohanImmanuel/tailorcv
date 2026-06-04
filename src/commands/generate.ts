@@ -7,54 +7,33 @@ import { generateResume, type GeneratedResume } from "../core/ai.js";
 import { loadConfig } from "../core/config.js";
 import { getAuthenticatedClient } from "../core/googleAuth.js";
 import { copyAndFill } from "../core/googleDrive.js";
+import {
+  cols, startAiSpinner, startDocSpinner,
+  heroHeadline, fitSummary, revealUrl, errorBox,
+} from "../core/ui.js";
 
-// ─── ui helpers ──────────────────────────────────────────────────────────────
+// ─── helpers ──────────────────────────────────────────────────────────────────
 
-const w = () => process.stdout.columns || 80;
-
-const panel = (content: string, title: string, color: "cyan" | "green" | "yellow" = "cyan") =>
+const bullet = (s: string) => `  ${chalk.dim("•")} ${s}`;
+const h      = (s: string) => chalk.bold.underline(s);
+const panel  = (content: string, title: string, color: "cyan" | "green" | "yellow" = "cyan") =>
   console.log(boxen(content, {
     title: chalk[color](title),
     padding: { top: 0, bottom: 0, left: 1, right: 1 },
     borderStyle: "round",
     borderColor: color,
-    width: w(),
+    width: cols(),
   }));
-
-const label  = (s: string) => chalk.cyan(s.padEnd(14));
-const bullet = (s: string) => `  ${chalk.dim("•")} ${s}`;
-const h      = (s: string) => chalk.bold.underline(s);
 
 // ─── resume renderer ─────────────────────────────────────────────────────────
 
-function renderResume(resume: GeneratedResume, company: string, role: string): void {
-  // ── hero headline ──────────────────────────────────────────────────────────
-  console.log("\n" + boxen(
-    chalk.bold.white(resume.headline),
-    {
-      padding: { top: 0, bottom: 0, left: 2, right: 2 },
-      borderStyle: "double",
-      borderColor: "green",
-      width: w(),
-      textAlignment: "center",
-    }
-  ));
+async function renderResume(resume: GeneratedResume, company: string, role: string): Promise<void> {
+  await heroHeadline(resume.headline);
 
-  // ── fit summary ───────────────────────────────────────────────────────────
   const totalBullets = resume.experience.reduce((n, e) => n + e.bullets.length, 0)
-                     + resume.projects.reduce((n, p) => n + p.bullets.length, 0);
-  const stat = (n: number, label: string) => `${chalk.bold.green(String(n))} ${chalk.dim(label)}`;
-  console.log(
-    "\n  " +
-    [
-      stat(resume.experience.length, "roles"),
-      stat(resume.projects.length,   "projects"),
-      stat(resume.skills.length,     "skill groups"),
-      stat(totalBullets,             "bullets"),
-    ].join(chalk.dim("  ·  ")) + "\n"
-  );
+                     + resume.projects.reduce((n, p)   => n + p.bullets.length, 0);
+  await fitSummary(resume.experience.length, resume.projects.length, resume.skills.length, totalBullets);
 
-  // ── full content panel ────────────────────────────────────────────────────
   const lines: string[] = [];
 
   lines.push(h("Profile"));
@@ -86,23 +65,24 @@ function renderResume(resume: GeneratedResume, company: string, role: string): v
     }
   }
 
+  console.log();
   panel(lines.join("\n"), `${company} — ${role}`, "green");
 }
 
 // ─── main ────────────────────────────────────────────────────────────────────
 
 export async function run(): Promise<void> {
-  panel(chalk.bold("Generate a tailored resume"), "Generate");
+  panel(chalk.bold("Generate a tailored resume"), "TailorCV");
 
   if (!process.env.OPENAI_API_KEY) {
-    console.log(chalk.yellow("⚠ No OpenAI key found. Run ") + chalk.cyan("tailorcv setup") + chalk.yellow(" first."));
+    await errorBox("No OpenAI key found", "Run tailorcv setup first.");
     return;
   }
 
   const profile = loadProfile();
   const hasData = profile.experience.length || profile.skills.length || profile.education.length;
   if (!hasData) {
-    console.log(chalk.yellow("⚠ Profile is empty. Run ") + chalk.cyan("tailorcv profile") + chalk.yellow(" first."));
+    await errorBox("Profile is empty", "Run tailorcv profile first.");
     return;
   }
 
@@ -129,25 +109,24 @@ export async function run(): Promise<void> {
   const jd = lines.join("\n").trim();
 
   if (!jd) {
-    console.log(chalk.yellow("No job description provided. Aborting."));
+    await errorBox("No job description", "Nothing was pasted. Aborting.");
     return;
   }
 
   // ── AI generation ──────────────────────────────────────────────────────────
 
-  const aiSpinner = ora({ text: "Generating resume with GPT-5.5…", color: "cyan" }).start();
-
+  const aiHandle = startAiSpinner(ora);
   let resume: GeneratedResume;
   try {
     resume = await generateResume(profile, company, role, jd);
-    aiSpinner.succeed(chalk.green("Resume generated"));
+    aiHandle.stop(true, "Resume generated");
   } catch (err) {
-    aiSpinner.fail(chalk.red("AI generation failed"));
-    console.log(chalk.red(err instanceof Error ? err.message : String(err)));
+    aiHandle.stop(false, "AI generation failed");
+    await errorBox("Generation failed", err instanceof Error ? err.message : String(err));
     return;
   }
 
-  renderResume(resume, company, role);
+  await renderResume(resume, company, role);
 
   // ── Google Doc creation ────────────────────────────────────────────────────
 
@@ -157,38 +136,29 @@ export async function run(): Promise<void> {
     const auth = await getAuthenticatedClient();
 
     if (auth) {
-      const docSpinner = ora({ text: "Building your Google Doc…", color: "cyan" }).start();
+      const docHandle = startDocSpinner(ora);
       try {
-        const docName = `${company} - ${role} - Resume`;
-
         const { url } = await copyAndFill(
           auth,
           config.google_template_doc_id,
           config.google_folder_id,
-          docName,
+          `${company} - ${role} - Resume`,
           profile,
           resume
         );
-
-        docSpinner.succeed(chalk.green("Google Doc ready"));
-        console.log("\n" + boxen(
-          `${chalk.dim("Open your resume")}\n\n${chalk.bold.cyan(url)}`,
-          {
-            padding: { top: 0, bottom: 0, left: 2, right: 2 },
-            borderStyle: "double",
-            borderColor: "cyan",
-            width: w(),
-            textAlignment: "center",
-          }
-        ) + "\n");
+        docHandle.stop(true, "Google Doc ready");
+        await revealUrl(url);
         return;
-
       } catch (err) {
-        docSpinner.fail(chalk.red("Google Doc creation failed"));
-        console.log(chalk.dim(err instanceof Error ? err.message : String(err)));
+        docHandle.stop(false, "Google Doc creation failed");
+        await errorBox("Doc creation failed", err instanceof Error ? err.message : String(err));
       }
     }
   } else {
-    console.log(chalk.dim("\nTip: run ") + chalk.cyan("tailorcv setup") + chalk.dim(" to connect Google Drive and get a formatted doc."));
+    console.log(
+      chalk.dim("\nTip: run ") +
+      chalk.cyan("tailorcv setup") +
+      chalk.dim(" to connect Google Drive and get a formatted doc.")
+    );
   }
 }
