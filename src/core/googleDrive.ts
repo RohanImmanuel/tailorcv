@@ -45,7 +45,7 @@ PROFILE
 
 TECHNICAL SKILLS
 
-{{skils-start separator=" · "}}
+{{skils-start}}
 {{skills-section-title}}: {{skills}}
 {{skills-end}}
 

@@ -58,7 +58,7 @@ export function buildBlocks(profile: Profile, resume: GeneratedResume): Block[] 
   return [
     // ── skills ────────────────────────────────────────────────────────────────
     {
-      startMarker: "{{skils-start",
+      startMarker: "{{skils-start}}",
       endMarker:   "{{skills-end}}",
       lines: resume.skills.map((g) => ({
         text:       `${g.category}: ${g.items.join(" · ")}`,
