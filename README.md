@@ -15,9 +15,9 @@ npm install -g tailorcv
 You store your full career history once. Every time you apply for a job, you paste the job description and the CLI:
 
 1. Sends your profile and JD to GPT-5.5
-2. Gets back a tailored resume with headline, summary, skills ordered by relevance, experience and project bullets rewritten to match the role
+2. Gets back a tailored resume with headline, summary, skills ordered by relevance, experience and projects rewritten and reordered to match the role
 3. Copies your pre-formatted Google Docs template
-4. Fills in the generated content while preserving all your formatting
+4. Fills in the generated content while preserving all your formatting including tab stops, fonts, bullet styles, and spacing
 5. Returns a direct link to the finished doc in your Drive
 
 ---
@@ -30,7 +30,7 @@ flowchart TD
     B --> C[Paste job description]
     C --> D[GPT-5.5\nProfile + JD → tailored resume JSON]
     D --> E[Copy Google Docs template]
-    E --> F[Fill placeholders\nwith generated content]
+    E --> F[Fill blocks and placeholders\npreserving all formatting]
     F --> G[Google Doc link returned]
 ```
 
@@ -46,7 +46,7 @@ flowchart LR
     E --> G[headline\nsummary\nskills\nexperience\nprojects]
 ```
 
-The prompt does more than keyword match - it scores the candidate's fit against the JD, identifies must-have vs nice-to-have requirements, handles gaps honestly without highlighting them, and optimises for recruiter shortlisting not just ATS parsing. Anti-hallucination rules prevent invented experience, inflated titles, or missing skills being claimed.
+The prompt scores fit against the JD, identifies must-have vs nice-to-have requirements, reorders experience and projects by relevance, handles gaps honestly without highlighting them, and optimises for recruiter shortlisting not just ATS parsing. Anti-hallucination rules prevent invented experience, inflated titles, or missing skills being claimed.
 
 ## Requirements
 
@@ -83,66 +83,99 @@ You need to create a free Google OAuth app (~5 minutes):
 
 ## Formatting your template
 
-After setup, the CLI prints a link to your template doc. Open it and format it however you want - fonts, spacing, bold headers, tab stops, bullet styles. The CLI preserves all of this on every fill.
+After setup, the CLI prints a link to your template doc. Open it and format it however you want - fonts, spacing, bold headers, bullet styles. The CLI reads the style of each reference line and applies it to every generated entry, preserving your formatting on every fill.
 
-**Keep these placeholders exactly as written:**
+### Template structure
+
+```
+{{name}}
+{{title}}
+{{location}} · {{email}} · {{phone}} · {{linkedin}} · {{github}}
+
+PROFILE
+
+{{profile_points}}
+
+TECHNICAL SKILLS
+
+{{skils-start}}
+{{skills-section-title}}: {{skills}}
+{{skills-end}}
+
+EXPERIENCE
+
+{{experience-start}}
+{{exp-header}}
+{{exp-subheader}}
+{{exp-bullet}}
+{{experience-end}}
+
+PROJECTS
+
+{{projects-start}}
+{{proj-header}}
+{{proj-tech}}
+{{proj-bullet}}
+{{projects-end}}
+
+EDUCATION
+
+{{education-start}}
+{{edu-header}}
+{{edu-subheader}}
+{{edu-gpa}}
+{{education-end}}
+
+CERTIFICATIONS
+
+{{certifications-start}}
+{{cert-line}}
+{{certifications-end}}
+
+References available upon request
+```
 
 ### Contact and headline
+
 | Placeholder | Fills with |
 |---|---|
-| `{{name}}` | Full name |
+| `{{name}}` | Full name from profile |
 | `{{title}}` | AI-generated headline tailored to the role |
 | `{{location}}` | Location |
 | `{{email}}` | Email |
 | `{{phone}}` | Phone |
 | `{{linkedin}}` | LinkedIn URL |
 | `{{github}}` | GitHub URL |
+| `{{profile_points}}` | 3-4 ATS-optimised summary bullets |
 
-### Profile
-| Placeholder | Fills with |
-|---|---|
-| `{{profile_points}}` | 3-4 ATS-optimised summary bullets, one per paragraph |
+### Blocks
 
-### Skills
-The skills section uses start/end markers so the CLI can bold just the category name on each line:
+Each section between `{{...-start}}` and `{{...-end}}` markers is a block. The lines inside are **style reference lines** - they are never shown in the output. Format them once to define how each type of line should look, and the CLI applies that style to every generated entry.
 
-```
-{{skils-start separator=" · "}}
-{{skills-section-title}}: {{skills}}
-{{skills-end}}
-```
+| Reference line | Format it as | Generates |
+|---|---|---|
+| `{{exp-header}}` | Bold + right tab stop | `Company [TAB] Location` for every role |
+| `{{exp-subheader}}` | Regular/italic + right tab stop | `Title [TAB] Dates` for every role |
+| `{{exp-bullet}}` | Bullet list style | Tailored bullets for every role |
+| `{{proj-header}}` | Bold + right tab stop | `Project Name [TAB] URL` for every project |
+| `{{proj-tech}}` | Italic or small | Tech stack joined with ` · ` |
+| `{{proj-bullet}}` | Bullet list style | Tailored project bullets |
+| `{{edu-header}}` | Bold + right tab stop | `Institution [TAB] Location` |
+| `{{edu-subheader}}` | Regular + right tab stop | `Degree [TAB] Graduation year` |
+| `{{skills-section-title}}: {{skills}}` | Your preferred skills style | Skills grouped by category |
+| `{{cert-line}}` | Your preferred cert style | `Name · Issuer · Date` per cert |
 
-Format the `{{skills-section-title}}: {{skills}}` line with whatever style you want - the CLI reads that style and applies it to every generated skill line.
+### Right tab stops
 
-### Experience
-Company name, title, location, and dates are static - type them directly in the template. Only the bullets are dynamic:
+Lines with a `[TAB]` in the table above use a tab character to push the right-hand value (location, dates, URL) to the right margin. To set this up:
 
-```
-Company Name          Location
-Job Title             Dates
+1. Click on the reference line (e.g. `{{exp-header}}`)
+2. Drag the tab stop marker on the ruler to the right margin, or use **Format → Align and indent** to add a right tab stop
+3. Done - the CLI inserts real content before that reference line so every generated paragraph inherits its tab stop automatically
 
-{{exp-1-bullet}}
-```
+### AI reordering
 
-| Placeholder | Fills with |
-|---|---|
-| `{{exp-1-bullet}}` | Tailored bullets for experience entry 1 |
-| `{{exp-2-bullet}}` | Tailored bullets for experience entry 2 |
-| `{{exp-3-bullet}}` | ...and so on |
-
-### Projects
-
-```
-Project Name          {{proj-1-url}}
-{{proj-1-skills}}
-{{proj-1-bullet}}
-```
-
-| Placeholder | Fills with |
-|---|---|
-| `{{proj-N-skills}}` | Tech stack joined with ` · ` |
-| `{{proj-N-url}}` | Project URL from your profile |
-| `{{proj-N-bullet}}` | Tailored project bullets |
+Experience entries and projects are ordered by relevance to the job description, not the order in your profile. The most relevant role appears first. Location, dates, and project URLs always come from your profile - never from the AI.
 
 ## Usage
 
@@ -175,6 +208,14 @@ tailorcv template
 
 Replaces the template doc content with the latest placeholder format if you need to start fresh.
 
+### Test your template
+
+```bash
+tailorcv test
+```
+
+Fills the template with mock data and opens the doc so you can check layout, formatting, tab stops, and bullet styles without spending AI tokens. The first run creates a dedicated test doc in your Drive; every subsequent run resets and refills the same doc.
+
 ## Commands
 
 | Command | Description |
@@ -183,6 +224,7 @@ Replaces the template doc content with the latest placeholder format if you need
 | `tailorcv profile` | View and edit your master profile |
 | `tailorcv generate` | Generate a tailored resume |
 | `tailorcv template` | Reset your Google Docs template |
+| `tailorcv test` | Test template layout with mock data |
 
 ### Dev
 
@@ -202,4 +244,3 @@ npm link                   # install tailorcv globally from local build
 | Generated resumes | Your Google Drive - `ResumeTailor/` |
 
 Nothing is sent to any server other than OpenAI (your profile + job description) and Google (to create the doc). No analytics, no accounts, no backend.
-
