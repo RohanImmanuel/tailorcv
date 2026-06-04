@@ -11,6 +11,7 @@ import { run as runProfile }  from "./commands/profile.js";
 import { run as runGenerate } from "./commands/generate.js";
 import { run as runSetup }    from "./commands/setup.js";
 import { run as runTemplate } from "./commands/template.js";
+import { run as runTest }     from "./commands/test.js";
 
 const program = new Command();
 
@@ -38,5 +39,10 @@ program
   .command("template")
   .description("Reset your Google Docs template to the latest placeholder format")
   .action(runTemplate);
+
+program
+  .command("test")
+  .description("Fill the template with mock data to verify layout without using AI tokens")
+  .action(runTest);
 
 program.parse();
