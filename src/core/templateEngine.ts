@@ -107,5 +107,33 @@ export function buildBlocks(profile: Profile, resume: GeneratedResume): Block[] 
         bullet: "{{proj-bullet}}",
       },
     },
+
+    // ── education ─────────────────────────────────────────────────────────────
+    {
+      startMarker: "{{education-start}}",
+      endMarker:   "{{education-end}}",
+      lines: profile.education.flatMap((edu, i) => [
+        ...(i > 0 ? [{ text: "", role: "spacer" as LineRole }] : []),
+        { text: `${edu.institution}\t${edu.location ?? ""}`, role: "header"    as LineRole },
+        { text: `${edu.degree}\t${edu.graduation}`,          role: "subheader" as LineRole },
+        ...(edu.gpa ? [{ text: edu.gpa, role: "plain" as LineRole }] : []),
+      ]),
+      styleMap: {
+        header:    "{{edu-institution}}",
+        subheader: "{{edu-degree}}",
+        plain:     "{{edu-gpa}}",
+      },
+    },
+
+    // ── certifications ────────────────────────────────────────────────────────
+    {
+      startMarker: "{{certifications-start}}",
+      endMarker:   "{{certifications-end}}",
+      lines: profile.certifications.map((cert) => ({
+        text: [cert.name, cert.issuer, cert.date].filter(Boolean).join(" · "),
+        role: "plain" as LineRole,
+      })),
+      styleMap: { plain: "{{cert-line}}" },
+    },
   ];
 }

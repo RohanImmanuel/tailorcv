@@ -65,6 +65,20 @@ PROJECTS
 {{proj-bullet}}
 {{projects-end}}
 
+EDUCATION
+
+{{education-start}}
+{{edu-institution}}\t{{edu-location}}
+{{edu-degree}}\t{{edu-graduation}}
+{{edu-gpa}}
+{{education-end}}
+
+CERTIFICATIONS
+
+{{certifications-start}}
+{{cert-line}}
+{{certifications-end}}
+
 References available upon request`;
 
 // ─── template doc ─────────────────────────────────────────────────────────────
@@ -334,7 +348,7 @@ async function applyRightTabStops(
       updateParagraphStyle: {
         range: { startIndex: el.startIndex!, endIndex: el.endIndex! },
         paragraphStyle: {
-          tabStops: [{ alignment: "RIGHT", offset: { magnitude: 450, unit: "PT" } }],
+          tabStops: [{ alignment: "RIGHT", offset: { magnitude: 468, unit: "PT" } }],
         },
         fields: "tabStops",
       },

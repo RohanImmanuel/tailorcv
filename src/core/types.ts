@@ -30,6 +30,7 @@ export interface Project extends Entry {
 
 export interface Education extends Entry {
   institution: string;
+  location: string;
   degree: string;
   field: string;
   graduation: string;

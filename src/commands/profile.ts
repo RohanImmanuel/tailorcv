@@ -136,6 +136,7 @@ const FIELDS: Record<ListSection, { key: string; label: string; list?: boolean; 
   ],
   education: [
     { key: "institution", label: "Institution" },
+    { key: "location",    label: "Location" },
     { key: "degree",      label: "Degree" },
     { key: "field",       label: "Field of study" },
     { key: "graduation",  label: "Graduation year" },
