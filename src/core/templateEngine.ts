@@ -6,21 +6,17 @@ export type LineRole = "plain" | "bullet" | "spacer" | "header" | "subheader";
 export interface LineSpec {
   text: string;
   role: LineRole;
-  /** Number of leading characters to bold (e.g. category name length for skill lines) */
   boldPrefix?: number;
 }
 
 export interface Block {
   startMarker: string;
-  endMarker: string;
-  lines: LineSpec[];
-  styleMap: Partial<Record<LineRole, string>>;
+  endMarker:   string;
+  lines:       LineSpec[];
+  styleMap:    Partial<Record<LineRole, string>>;
 }
 
-// ─── simple replacements (replaceAllText — preserves all formatting) ──────────
-//
-// Contact fields and profile summary only. Experience and projects are handled
-// by blocks so the AI can reorder entries by relevance.
+// ─── simple replacements ──────────────────────────────────────────────────────
 
 export function buildSimpleReplacements(
   profile: Profile,
@@ -28,30 +24,30 @@ export function buildSimpleReplacements(
 ): Record<string, string> {
   const c = profile.contact;
   return {
-    "{{name}}":          c.full_name,
-    "{{title}}":         resume.headline,
-    "{{location}}":      c.location,
-    "{{email}}":         c.email,
-    "{{phone}}":         c.phone,
-    "{{linkedin}}":      c.linkedin,
-    "{{github}}":        c.github,
+    "{{name}}":           c.full_name,
+    "{{title}}":          resume.headline,
+    "{{location}}":       c.location,
+    "{{email}}":          c.email,
+    "{{phone}}":          c.phone,
+    "{{linkedin}}":       c.linkedin,
+    "{{github}}":         c.github,
     "{{profile_points}}": resume.summary.join("\n"),
   };
 }
 
 // ─── blocks ───────────────────────────────────────────────────────────────────
 //
-// Skills, experience, and projects are all rendered as blocks so the engine
-// can apply per-line styles (bold prefix, bullets, header/subheader) and the
-// AI is free to reorder entries by relevance.
+// The block engine uses an INSERT-BEFORE strategy so generated paragraphs
+// inherit the reference line's paragraph style — including any right tab stop
+// the user has set — without needing to write tabStops via the API (read-only).
 //
-// For experience and projects, each AI entry is matched back to the profile by
-// name to retrieve fields the AI does not generate (location, dates, url).
+// For experience/projects, each AI entry is matched back to the profile by
+// company+title / name to retrieve fields the AI does not output (location,
+// dates, url).
 
 export function buildBlocks(profile: Profile, resume: GeneratedResume): Block[] {
-  const findExp = (company: string, title: string) =>
+  const findExp  = (company: string, title: string) =>
     profile.experience.find((e) => e.company === company && e.title === title);
-
   const findProj = (name: string) =>
     profile.projects.find((p) => p.name === name);
 
@@ -82,8 +78,8 @@ export function buildBlocks(profile: Profile, resume: GeneratedResume): Block[] 
         ];
       }),
       styleMap: {
-        header:    "{{exp-company}}",
-        subheader: "{{exp-title}}",
+        header:    "{{exp-header}}",
+        subheader: "{{exp-subheader}}",
         bullet:    "{{exp-bullet}}",
       },
     },
@@ -102,7 +98,7 @@ export function buildBlocks(profile: Profile, resume: GeneratedResume): Block[] 
         ];
       }),
       styleMap: {
-        header: "{{proj-name}}",
+        header: "{{proj-header}}",
         plain:  "{{proj-tech}}",
         bullet: "{{proj-bullet}}",
       },
@@ -114,13 +110,13 @@ export function buildBlocks(profile: Profile, resume: GeneratedResume): Block[] 
       endMarker:   "{{education-end}}",
       lines: profile.education.flatMap((edu, i) => [
         ...(i > 0 ? [{ text: "", role: "spacer" as LineRole }] : []),
-        { text: `${edu.institution}\t${edu.location ?? ""}`, role: "header"    as LineRole },
+        { text: `${edu.institution}\t${edu.location ?? ""}`, role: "header"    as LineRole, boldPrefix: edu.institution.length },
         { text: `${edu.degree}\t${edu.graduation}`,          role: "subheader" as LineRole },
         ...(edu.gpa ? [{ text: edu.gpa, role: "plain" as LineRole }] : []),
       ]),
       styleMap: {
-        header:    "{{edu-institution}}",
-        subheader: "{{edu-degree}}",
+        header:    "{{edu-header}}",
+        subheader: "{{edu-subheader}}",
         plain:     "{{edu-gpa}}",
       },
     },

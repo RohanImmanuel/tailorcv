@@ -35,6 +35,13 @@ export async function getOrCreateFolder(auth: OAuth2Client, name: string): Promi
 // Format those lines in Google Docs (bold, tab stops, bullets, font) —
 // the code reads those styles and reuses them for every generated entry.
 
+// ─── template text ────────────────────────────────────────────────────────────
+//
+// Each block has ONE style-reference line per role. The block engine inserts
+// real content BEFORE those lines so new paragraphs inherit their paragraph
+// style (including any right tab stop the user has set) via Google Docs'
+// natural paragraph inheritance — no API tab stop writes needed.
+
 export const TEMPLATE_TEXT = `{{name}}
 {{title}}
 {{location}} · {{email}} · {{phone}} · {{linkedin}} · {{github}}
@@ -52,15 +59,15 @@ TECHNICAL SKILLS
 EXPERIENCE
 
 {{experience-start}}
-{{exp-company}}\t{{exp-location}}
-{{exp-title}}\t{{exp-dates}}
+{{exp-header}}
+{{exp-subheader}}
 {{exp-bullet}}
 {{experience-end}}
 
 PROJECTS
 
 {{projects-start}}
-{{proj-name}}\t{{proj-url}}
+{{proj-header}}
 {{proj-tech}}
 {{proj-bullet}}
 {{projects-end}}
@@ -68,8 +75,8 @@ PROJECTS
 EDUCATION
 
 {{education-start}}
-{{edu-institution}}\t{{edu-location}}
-{{edu-degree}}\t{{edu-graduation}}
+{{edu-header}}
+{{edu-subheader}}
 {{edu-gpa}}
 {{education-end}}
 
@@ -316,74 +323,37 @@ export async function copyAndFill(
     });
   }
 
-  // 5. apply right tab stop to any paragraph containing a tab character
-  //    (company\tlocation, title\tdates, proj-name\turl lines)
-  await applyRightTabStops(docs, docId);
-
   return { docId, url };
 }
 
-// ─── right tab stop pass ──────────────────────────────────────────────────────
-//
-// After all replaceAllText calls, fetch the document and apply a right-aligned
-// tab stop to every paragraph that contains a tab character. These are the
-// header lines: Company\tLocation, Title\tDates, ProjectName\tURL.
-// Content width is derived from the document's own page size and margins.
-
-function contentWidthPt(doc: docs_v1.Schema$Document): number {
-  const style = doc.documentStyle ?? {};
-  const pageW     = style.pageSize?.width?.magnitude      ?? 612; // letter width in pt
-  const marginL   = style.marginLeft?.magnitude            ?? 72;  // 1 inch default
-  const marginR   = style.marginRight?.magnitude           ?? 72;
-  return pageW - marginL - marginR;
-}
-
-async function applyRightTabStops(
-  docs: ReturnType<typeof getDocs>,
-  docId: string
-): Promise<void> {
-  const { data: doc } = await docs.documents.get({ documentId: docId });
-
-  const width = contentWidthPt(doc);
-
-  const tabRequests: docs_v1.Schema$Request[] = (doc.body?.content ?? [])
-    .filter((el) => {
-      if (!el.paragraph) return false;
-      const text = (el.paragraph.elements ?? [])
-        .map((e) => e.textRun?.content ?? "")
-        .join("");
-      return text.includes("\t");
-    })
-    .map((el) => ({
-      updateParagraphStyle: {
-        range: { startIndex: el.startIndex!, endIndex: el.endIndex! },
-        paragraphStyle: {
-          tabStops: [{ alignment: "END", offset: { magnitude: width, unit: "PT" } }],
-        },
-        fields: "tabStops",
-      },
-    }));
-
-  if (tabRequests.length) {
-    await docs.documents.batchUpdate({
-      documentId: docId,
-      requestBody: { requests: tabRequests },
-    });
-  }
-}
-
 // ─── block request builder ───────────────────────────────────────────────────
+//
+// INSERT-BEFORE strategy — preserves tab stops set by the user in the template.
+//
+// The Google Docs API does not allow writing tabStops via updateParagraphStyle.
+// Instead of deleting the block then inserting (which loses all formatting),
+// we INSERT the real content at the position of the first reference line.
+// Google Docs creates each new paragraph by inheriting the style of the
+// paragraph at the insertion point — including its right tab stop.
+// We then delete the start marker, reference lines, and end marker.
+//
+// Request order per block (processed bottom-to-top across blocks):
+//   1. insertText at firstRefStart  →  inherits first ref line style (tab stop)
+//   2. style requests on [firstRefStart, firstRefStart+L)
+//   3. deleteContentRange [firstRefStart+L, blockEnd+L)  →  ref lines + end marker
+//   4. deleteContentRange [blockStart, firstRefStart)     →  start marker
 
 function buildBlockRequests(
   allElements: docs_v1.Schema$StructuralElement[],
-  paragraphs: Para[],
-  blocks: Block[]
+  paragraphs:  Para[],
+  blocks:      Block[]
 ): docs_v1.Schema$Request[] {
   type Located = {
-    startIndex: number;
-    endIndex: number;
-    lines: Block["lines"];
-    styles: Partial<Record<LineRole, StoredStyle>>;
+    blockStart:    number;  // startIndex of the start-marker paragraph
+    firstRefStart: number;  // endIndex of start-marker = startIndex of first ref line
+    blockEnd:      number;  // endIndex of the end-marker paragraph
+    lines:         Block["lines"];
+    styles:        Partial<Record<LineRole, StoredStyle>>;
   };
 
   const located: Located[] = [];
@@ -394,38 +364,49 @@ function buildBlockRequests(
     if (!startPara || !endPara) continue;
 
     located.push({
-      startIndex: startPara.startIndex,
-      endIndex:   endPara.endIndex,
-      lines:      block.lines,
-      styles:     readBlockStyles(allElements, block.styleMap),
+      blockStart:    startPara.startIndex,
+      firstRefStart: startPara.endIndex,   // first ref line starts right after start marker
+      blockEnd:      endPara.endIndex,
+      lines:         block.lines,
+      styles:        readBlockStyles(allElements, block.styleMap),
     });
   }
 
-  // process bottom-to-top so deletions don't shift earlier indices
-  located.sort((a, b) => b.startIndex - a.startIndex);
+  // process bottom-to-top so earlier indices are unaffected by later changes
+  located.sort((a, b) => b.blockStart - a.blockStart);
 
   const requests: docs_v1.Schema$Request[] = [];
 
-  for (const { startIndex, endIndex, lines, styles } of located) {
-    requests.push({ deleteContentRange: { range: { startIndex, endIndex } } });
-
-    if (!lines.length) continue;
+  for (const { blockStart, firstRefStart, blockEnd, lines, styles } of located) {
+    if (!lines.length) {
+      // nothing to insert — delete the entire block
+      requests.push({ deleteContentRange: { range: { startIndex: blockStart, endIndex: blockEnd } } });
+      continue;
+    }
 
     const text = lines.map((l) => l.text).join("\n") + "\n";
-    requests.push({ insertText: { location: { index: startIndex }, text } });
+    const L    = text.length;
 
-    // apply per-line styles at the known character offsets
-    let offset = startIndex;
+    // 1. Insert all content at firstRefStart — inherits first reference line's
+    //    paragraph style, including any right tab stop the user set there.
+    requests.push({ insertText: { location: { index: firstRefStart }, text } });
+
+    // 2. Apply per-line styles (everything except tabStops, which are inherited)
+    let offset = firstRefStart;
     for (const line of lines) {
       const lineStart = offset;
       const lineEnd   = offset + line.text.length + 1; // +1 for \n
       offset = lineEnd;
-
       if (!line.text || line.role === "spacer") continue;
-
       const style = styles[line.role];
       if (style) applyStyle(requests, style, line, lineStart, lineEnd);
     }
+
+    // 3. Delete reference lines + end marker (now shifted to [firstRefStart+L, blockEnd+L))
+    requests.push({ deleteContentRange: { range: { startIndex: firstRefStart + L, endIndex: blockEnd + L } } });
+
+    // 4. Delete start marker (unaffected by the insert above since it's before firstRefStart)
+    requests.push({ deleteContentRange: { range: { startIndex: blockStart, endIndex: firstRefStart } } });
   }
 
   return requests;
