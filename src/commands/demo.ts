@@ -13,63 +13,63 @@ const MOCK_RESUME: GeneratedResume = {
   headline: "Software Engineer · TypeScript · REST APIs",
 
   summary: [
-    "3+ years building and testing web, mobile, and API-based platforms across fast-paced product and SaaS environments.",
-    "Experienced in end-to-end test automation, CI/CD integration, and developer tooling for cross-browser and cross-platform coverage.",
-    "Proven ability to debug complex systems at scale, from browser quirks to cloud-deployed backend services.",
+    "3+ years building and shipping backend services, REST APIs, and automation tooling across product and SaaS environments.",
+    "Experienced in end-to-end test automation, CI/CD integration, and developer tooling for cross-platform coverage.",
+    "Proven ability to debug complex distributed systems and deliver reliable, well-tested features at pace.",
   ],
 
   skills: [
     { category: "Languages",      items: ["TypeScript", "Python", "JavaScript", "Go"] },
-    { category: "Testing",        items: ["Selenium", "Playwright", "Appium", "Pytest", "WebdriverIO"] },
+    { category: "Backend & APIs", items: ["REST", "Node.js", "Express", "Zod"] },
     { category: "Cloud & DevOps", items: ["AWS", "Docker", "GitHub Actions", "CI/CD"] },
     { category: "Databases",      items: ["MongoDB", "PostgreSQL"] },
   ],
 
   experience: [
     {
-      company: "HubSpot",
-      title:   "Software Engineer, Final Semester Internship",
+      company: "Horizon Tech",
+      title:   "Software Engineer",
       bullets: [
-        "Built automated test coverage for platform APIs using TypeScript and REST-based test frameworks, improving pipeline reliability.",
-        "Debugged and resolved cross-browser issues across Chrome, Firefox, and Safari for production web features.",
-        "Collaborated with senior engineers to ship a CI-integrated test suite reducing manual QA effort by 40%.",
-        "Documented testing patterns adopted across two product squads.",
+        "Built and maintained REST APIs powering core product features, improving response time by 35% through query optimisation.",
+        "Developed an automated test suite covering 80% of critical API endpoints, integrated into CI pipelines.",
+        "Debugged and resolved cross-browser and cross-platform issues across web and mobile surfaces.",
+        "Collaborated with product and design to ship three major features on time across a two-month release cycle.",
       ],
     },
     {
-      company: "BrowserStack",
-      title:   "Software Development Engineer, Customer Engineering",
+      company: "Vertex Systems",
+      title:   "Backend Engineer",
       bullets: [
-        "Supported enterprise customers integrating Selenium, Appium, and Playwright with BrowserStack's cloud infrastructure.",
-        "Built and maintained a custom Chrome-extension debugging tool used internally to reproduce customer-reported issues.",
-        "Resolved 25+ parallel environment configuration issues monthly across web and mobile automation pipelines.",
-        "Authored technical guides and runbooks adopted by the wider Customer Engineering team.",
+        "Designed and shipped a webhook delivery service handling 50k+ events per day with retry logic and dead-letter queuing.",
+        "Migrated a monolithic data pipeline to event-driven microservices, reducing processing latency by 60%.",
+        "Authored internal SDK used by four teams to integrate with the platform's REST API.",
+        "Led incident response for two P1 outages, writing post-mortems and implementing preventive monitoring.",
       ],
     },
     {
-      company: "Maneuver Marketing",
-      title:   "Tech Systems Engineer, Contract",
+      company: "Spark Digital",
+      title:   "Junior Software Engineer",
       bullets: [
-        "Automated CRM workflows and marketing pipeline integrations reducing manual processing time by 60%.",
-        "Built REST API integrations between third-party SaaS platforms using JavaScript and Zapier.",
+        "Contributed to a Node.js backend serving 10k daily active users, focusing on authentication and session management.",
+        "Wrote integration tests for third-party payment and notification APIs reducing regression bugs by 45%.",
       ],
     },
   ],
 
   projects: [
     {
-      name:    "AI News Digest Platform",
-      tech:    ["Node.js", "OpenAI", "RSS", "Docker", "AWS"],
+      name:    "OpenAPI Test Runner",
+      tech:    ["Go", "REST", "GitHub Actions", "Docker"],
       bullets: [
-        "Built an automated news aggregation pipeline using OpenAI to summarise and categorise articles from 20+ RSS feeds.",
-        "Deployed as a containerised service on AWS with scheduled runs and email digest delivery.",
+        "Built a CLI tool that reads an OpenAPI spec and auto-generates integration tests, cutting manual test authoring time in half.",
+        "Published as an open-source package with GitHub Actions integration and schema diff alerting.",
       ],
     },
     {
-      name:    "go-api-test-runner",
-      tech:    ["Go", "REST", "GitHub Actions"],
+      name:    "AI Digest Service",
+      tech:    ["Node.js", "OpenAI", "RSS", "AWS Lambda"],
       bullets: [
-        "Developed a lightweight CLI test runner for REST APIs in Go, supporting JSON schema validation and CI integration.",
+        "Developed a serverless pipeline that aggregates content from 30+ sources and delivers AI-summarised digests on a daily schedule.",
       ],
     },
   ],
