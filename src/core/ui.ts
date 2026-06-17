@@ -128,8 +128,8 @@ export async function revealUrl(url: string): Promise<void> {
   console.log(chalk.cyan("║") + chalk.dim(label.padStart(Math.floor((cols() - 2 + label.length) / 2)).padEnd(cols() - 2)) + chalk.cyan("║"));
   console.log(chalk.cyan("║") + " ".repeat(cols() - 2) + chalk.cyan("║"));
 
-  // typewriter URL line
-  const urlPad = " ".repeat(Math.floor((cols() - 2 - url.length) / 2));
+  // typewriter URL line (clamp padding so long URLs don't break repeat())
+  const urlPad = " ".repeat(Math.max(0, Math.floor((cols() - 2 - url.length) / 2)));
   process.stdout.write(chalk.cyan("║") + urlPad);
   for (const char of url) {
     process.stdout.write(chalk.bold.cyan(char));
